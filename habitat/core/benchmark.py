@@ -12,11 +12,12 @@ and is implemented through metrics defined for ``habitat.EmbodiedTask``.
 import os
 from collections import defaultdict
 from typing import Dict, Optional
-
 from habitat.config.default import get_config
 from habitat.core.agent import Agent
 from habitat.core.env import Env
-
+from habitat.core.logging import logger
+import habitat_sim.agent
+import json
 
 class Benchmark:
     r"""Benchmark for evaluating agents in environments."""
@@ -49,8 +50,6 @@ class Benchmark:
         import evaluation_pb2
         import evaluation_pb2_grpc
         import grpc
-
-        time.sleep(60)
 
         def pack_for_grpc(entity):
             return pickle.dumps(entity)
@@ -127,19 +126,36 @@ class Benchmark:
             )
 
         assert num_episodes > 0, "num_episodes should be greater than 0"
-
+        print(num_episodes)
         agg_metrics: Dict = defaultdict(float)
 
         count_episodes = 0
+        all_metrics = []
+        all_metrics_0 = []
+        count_success = 0
         while count_episodes < num_episodes:
             observations = self._env.reset()
             agent.reset()
-
+            metrics = self._env.get_metrics()
+            all_metrics_0.append(metrics)
+            #if count_episodes <903:
+            #    count_episodes += 1
+            #    continue
+            #if count_episodes > 845:
+            #    exit()
             while not self._env.episode_over:
                 action = agent.act(observations)
+                #if count_episodes < 14:#779 802
+                #    action = 0
+                if agent.total_steps == 500:
+                    metrics = self._env.get_metrics()
                 observations = self._env.step(action)
 
             metrics = self._env.get_metrics()
+            all_metrics.append(metrics)
+            print(count_episodes, metrics)
+            if metrics['success'] == 1:
+                count_success += 1
             for m, v in metrics.items():
                 if isinstance(v, dict):
                     for sub_m, sub_v in v.items():
@@ -147,7 +163,28 @@ class Benchmark:
                 else:
                     agg_metrics[m] += v
             count_episodes += 1
-
+            avg_metrics = {k: v / count_episodes for k, v in agg_metrics.items()}
+            for k,v in avg_metrics.items():
+                logger.info("{}: {}".format(k, v))
+            
+            # if metrics['success'] == 1:
+            #     with open("output/FBE_PSL_oh_b_v2/f_r_count_s.txt", "a") as file_object:
+            #         file_object.write(str(agent.fronter_this_ex) +' '+ str(agent.random_this_ex)+ '\n')
+            # else:
+            #     with open("output/FBE_PSL_oh_b_v2/f_r_count_f.txt", "a") as file_object:
+            #         file_object.write(str(agent.fronter_this_ex) + ' '+str(agent.random_this_ex)+ '\n')
+                    
+            with open('output_new/FBE_PSL_oh_b/results.txt', 'w') as fp:
+                for item in all_metrics:
+                    # write each item on a new line
+                    fp.write("%s\n" % item)
+                    
+            with open('output_new/FBE_PSL_oh_b/results_0.txt', 'w') as fp:
+                for item in all_metrics_0:
+                    # write each item on a new line
+                    fp.write("%s\n" % item)
+            
+            
         avg_metrics = {k: v / count_episodes for k, v in agg_metrics.items()}
 
         return avg_metrics

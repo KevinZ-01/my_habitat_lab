@@ -1043,7 +1043,14 @@ class TurnRightAction(SimulatorTaskAction):
         """
         return self._sim.step(HabitatSimActions.TURN_RIGHT)
 
-
+@registry.register_task_action
+class TurnRightAction2(SimulatorTaskAction):
+    def step(self, *args: Any, **kwargs: Any):
+        r"""Update ``_metric``, this method is called from ``Env`` on each
+        ``step``.
+        """
+        return self._sim.step(HabitatSimActions.TURN_RIGHT_2)
+    
 @registry.register_task_action
 class StopAction(SimulatorTaskAction):
     name: str = "STOP"

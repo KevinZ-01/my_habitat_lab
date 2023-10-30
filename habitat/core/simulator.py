@@ -6,7 +6,16 @@
 import abc
 from collections import OrderedDict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import attr
 import numpy as np
@@ -16,7 +25,13 @@ from gym import Space, spaces
 from habitat.config import Config
 from habitat.core.dataset import Episode
 
-VisualObservation = Union[np.ndarray]
+if TYPE_CHECKING:
+    try:
+        from torch import Tensor
+    except ImportError:
+        pass
+
+VisualObservation = Union[np.ndarray, "Tensor"]
 
 
 @attr.s(auto_attribs=True)
@@ -379,7 +394,7 @@ class Simulator:
     def render(self, mode: str = "rgb") -> Any:
         raise NotImplementedError
 
-    def close(self) -> None:
+    def close(self, destroy: bool = True) -> None:
         pass
 
     def previous_step_collided(self) -> bool:

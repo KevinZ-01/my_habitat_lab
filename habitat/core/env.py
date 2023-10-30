@@ -95,9 +95,6 @@ class Env:
                 self.current_episode.scene_dataset_config
             )
             self._config.SIMULATOR.SCENE = self.current_episode.scene_id
-            self._config.SIMULATOR.ADDITIONAL_OBJECT_PATHS = (
-                self.current_episode.additional_obj_config_paths
-            )
             self._config.freeze()
 
             self.number_of_episodes = len(self.episodes)
@@ -373,12 +370,16 @@ class RLEnv(gym.Env):
         :param config: config to construct :ref:`Env`
         :param dataset: dataset to construct :ref:`Env`.
         """
-
+        self._core_env_config = config
         self._env = Env(config, dataset)
         self.observation_space = self._env.observation_space
         self.action_space = self._env.action_space
         self.number_of_episodes = self._env.number_of_episodes
         self.reward_range = self.get_reward_range()
+
+    @property
+    def config(self) -> Config:
+        return self._core_env_config
 
     @property
     def habitat_env(self) -> Env:

@@ -22,6 +22,7 @@ class _DefaultHabitatSimActions(Enum):
     TURN_RIGHT = 3
     LOOK_UP = 4
     LOOK_DOWN = 5
+    TURN_RIGHT_2 = 6
 
 
 @attr.s(auto_attribs=True, slots=True)

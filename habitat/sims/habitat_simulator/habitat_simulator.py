@@ -16,7 +16,7 @@ from typing import (
     Union,
     cast,
 )
-
+import time
 import numpy as np
 from gym import spaces
 from gym.spaces.box import Box
@@ -137,6 +137,8 @@ class HabitatSimDepthSensor(DepthSensor, HabitatSimSensor):
     max_depth_value: float
 
     def __init__(self, config: Config) -> None:
+        # print(config)
+        #time.sleep(222)
         if config.NORMALIZE_DEPTH:
             self.min_depth_value = 0
             self.max_depth_value = 1
@@ -239,7 +241,9 @@ class HabitatSimFisheyeSemanticSensor(HabitatSimSemanticSensor):
     _get_default_spec = habitat_sim.FisheyeSensorDoubleSphereSpec
 
 
-def check_sim_obs(obs: Optional[np.ndarray], sensor: Sensor) -> None:
+def check_sim_obs(
+    obs: Union[np.ndarray, "Tensor", None], sensor: Sensor
+) -> None:
     assert obs is not None, (
         "Observation corresponding to {} not present in "
         "simulator's observations".format(sensor.uuid)
@@ -415,14 +419,17 @@ class HabitatSim(habitat_sim.Simulator, Simulator):
 
         return output
 
-    def reconfigure(self, habitat_config: Config) -> None:
+    def reconfigure(
+        self, habitat_config: Config, should_close_on_new_scene: bool = True
+    ) -> None:
         # TODO(maksymets): Switch to Habitat-Sim more efficient caching
         is_same_scene = habitat_config.SCENE == self._current_scene
         self.habitat_config = habitat_config
         self.sim_config = self.create_sim_config(self._sensor_suite)
         if not is_same_scene:
             self._current_scene = habitat_config.SCENE
-            self.close()
+            if should_close_on_new_scene:
+                self.close(destroy=False)
             super().reconfigure(self.sim_config)
 
         self._update_agents_state()
